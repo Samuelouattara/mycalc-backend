@@ -26,11 +26,29 @@ export class User {
   @Column({ type: 'date', nullable: true })
   joinDate?: string;
 
+  @Column({ type: 'date', nullable: true })
+  date?: string;
+
+  @Column({ nullable: true })
+  lastcal?: string;
+
+  @Column({ nullable: true })
+  lastcalc?: string;
+
+  @Column({ nullable: true })
+  opetype?: string;
+
+
+
   @Column({ type: 'datetime', nullable: true })
   lastLogin?: Date;
 
+
   @Column({ type: 'int', default: 0 })
   calculationsCount!: number;
+
+  @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
+  createdAt!: Date;
 
   @OneToMany(() => Calculation, calculation => calculation.user)
   calculations!: Calculation[];
