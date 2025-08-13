@@ -141,3 +141,37 @@ export class CalculationHistoryResponseDto {
   })
   history!: CalculationDto[];
 }
+
+export class OperatorCountDto {
+  @ApiProperty({
+    description: 'Opérateur mathématique',
+    example: '+'
+  })
+  operator!: string;
+
+  @ApiProperty({
+    description: 'Nombre d\'occurrences de cet opérateur',
+    example: 8
+  })
+  count!: number;
+}
+
+export class UserOperatorsResponseDto {
+  @ApiProperty({
+    description: 'ID de l\'utilisateur',
+    example: 1
+  })
+  userId!: number;
+
+  @ApiProperty({
+    description: 'Nombre total de calculs de l\'utilisateur',
+    example: 13
+  })
+  totalCalculations!: number;
+
+  @ApiProperty({
+    description: 'Liste des opérateurs avec leur nombre d\'occurrences',
+    type: [OperatorCountDto]
+  })
+  operators!: OperatorCountDto[];
+}

@@ -9,7 +9,8 @@ import {
   CreateCalculationDto, 
   CalculationResponseDto, 
   CalculationHistoryResponseDto,
-  CalculationDto 
+  CalculationDto,
+  UserOperatorsResponseDto
 } from '../dto/calculation.dto';
 
 @ApiTags('calculations')
@@ -89,9 +90,16 @@ export class CalculationController {
   }
 
   @Get('history/:userId')
-  @ApiOperation({ summary: 'Obtenir l\'historique paginé des calculs d\'un utilisateur' })
+  @ApiOperation({ summary: 'Obtenir l\'historique paginé des calculs d\'un utilisateur avec filtrage optionnel par opérateur' })
   @ApiParam({ name: 'userId', description: 'ID de l\'utilisateur', type: 'number' })
-  @ApiQuery({ name: 'page', description: 'Numéro de page', required: false, type: 'string' })
+  @ApiQuery({ name: 'page', description: 'Numéro de page (défaut: 1)', required: false, type: 'string' })
+  @ApiQuery({ 
+    name: 'operator', 
+    description: 'Filtrer par opérateur. Valeurs acceptées: +, -, *, /, sin, cos, tan, chain. Note: Utilisez %2B pour encoder le + dans l\'URL', 
+    required: false, 
+    type: 'string',
+    example: '+'
+  })
   @ApiResponse({ 
     status: 200, 
     description: 'Historique des calculs récupéré avec succès',
@@ -102,14 +110,53 @@ export class CalculationController {
     description: 'Utilisateur non trouvé'
   })
   async getUserCalculationHistory(
-    @Param('userId') userId: number,
-    @Query('page') page: string
+    @Param('userId') userId: string,
+    @Query('page') page: string,
+    @Query('operator') operator?: string
   ) {
-    const user = await this.userService.findById(userId);
+    // Validation et conversion de l'userId
+    const userIdNum = parseInt(userId, 10);
+    if (isNaN(userIdNum)) {
+      throw new BadRequestException('ID utilisateur invalide');
+    }
+
+    const user = await this.userService.findById(userIdNum);
     if (!user) throw new BadRequestException('Utilisateur non trouvé');
+    
     const pageNum = parseInt(page, 10) || 1;
     const pageSize = 5;
-    const allHistory = await this.calculationService.findByUser(userId);
+    let allHistory = await this.calculationService.findByUser(userIdNum);
+    
+    // Filtrer par opérateur si spécifié
+    if (operator) {
+      console.log('Filtrage par opérateur reçu:', `"${operator}"`);
+      console.log('Longueur de l\'opérateur:', operator.length);
+      console.log('Codes ASCII:', Array.from(operator).map(c => c.charCodeAt(0)));
+      console.log('Calculs avant filtrage:', allHistory.map(c => ({ id: c.id, operator: `"${c.operator}"` })));
+      
+      // Gestion spéciale pour les opérateurs qui peuvent être mal encodés
+      let searchOperator = operator;
+      
+      // Si l'opérateur reçu est un espace ou vide, on cherche '+'
+      if (operator === ' ' || operator === '' || operator === '%20') {
+        searchOperator = '+';
+      }
+      
+      // Si l'opérateur reçu est '+' mais qu'il y a un problème d'encodage
+      if (operator === '+' || operator === '%2B') {
+        searchOperator = '+';
+      }
+      
+      console.log('Opérateur de recherche:', `"${searchOperator}"`);
+      
+      allHistory = allHistory.filter(calc => {
+        const matches = calc.operator === searchOperator;
+        console.log(`Calcul ${calc.id}: operator="${calc.operator}" === "${searchOperator}" = ${matches}`);
+        return matches;
+      });
+      console.log('Calculs après filtrage:', allHistory.length);
+    }
+    
     const total = allHistory.length;
     const history = allHistory.slice((pageNum - 1) * pageSize, pageNum * pageSize);
     return {
@@ -133,10 +180,15 @@ export class CalculationController {
     description: 'Utilisateur non trouvé'
   })
   async createCalculation(
-    @Param('userId') userId: number,
+    @Param('userId') userId: string,
     @Body() body: CreateCalculationDto,
   ) {
-    const user = await this.userService.findById(userId);
+    const userIdNum = parseInt(userId, 10);
+    if (isNaN(userIdNum)) {
+      throw new BadRequestException('ID utilisateur invalide');
+    }
+
+    const user = await this.userService.findById(userIdNum);
     if (!user) throw new BadRequestException('Utilisateur non trouvé');
     return this.calculationService.create(user, body.expression, body.result);
   }
@@ -153,10 +205,49 @@ export class CalculationController {
     status: 400, 
     description: 'Utilisateur non trouvé'
   })
-  async getUserCalculations(@Param('userId') userId: number) {
-    const user = await this.userService.findById(userId);
+  async getUserCalculations(@Param('userId') userId: string) {
+    const userIdNum = parseInt(userId, 10);
+    if (isNaN(userIdNum)) {
+      throw new BadRequestException('ID utilisateur invalide');
+    }
+
+    const user = await this.userService.findById(userIdNum);
     if (!user) throw new BadRequestException('Utilisateur non trouvé');
-    return this.calculationService.findByUser(userId);
+    return this.calculationService.findByUser(userIdNum);
+  }
+
+  @Get(':userId/operators')
+  @ApiOperation({ summary: 'Obtenir tous les opérateurs utilisés par un utilisateur avec leur nombre d\'occurrences' })
+  @ApiParam({ name: 'userId', description: 'ID de l\'utilisateur', type: 'number' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Opérateurs récupérés avec succès',
+    type: UserOperatorsResponseDto
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Utilisateur non trouvé'
+  })
+  async getUserOperators(@Param('userId') userId: string) {
+    const userIdNum = parseInt(userId, 10);
+    if (isNaN(userIdNum)) {
+      throw new BadRequestException('ID utilisateur invalide');
+    }
+
+    const user = await this.userService.findById(userIdNum);
+    if (!user) throw new BadRequestException('Utilisateur non trouvé');
+    
+    const allHistory = await this.calculationService.findByUser(userIdNum);
+    const operators = [...new Set(allHistory.map(calc => calc.operator))];
+    
+    return {
+      userId: userIdNum,
+      totalCalculations: allHistory.length,
+      operators: operators.map(op => ({
+        operator: op,
+        count: allHistory.filter(calc => calc.operator === op).length
+      }))
+    };
   }
 }
 

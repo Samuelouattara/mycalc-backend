@@ -83,8 +83,13 @@ export class UserController {
     status: 404, 
     description: 'Utilisateur non trouvé'
   })
-  async findOne(@Param('id') id: number) {
-    const user = await this.userService.findById(id);
+  async findOne(@Param('id') id: string) {
+    const idNum = parseInt(id, 10);
+    if (isNaN(idNum)) {
+      throw new BadRequestException('ID utilisateur invalide');
+    }
+
+    const user = await this.userService.findById(idNum);
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
     return user;
   }
