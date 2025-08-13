@@ -4,19 +4,19 @@ import { Calculation } from '../calculation/calculation.entity';
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ unique: true })
-  email: string;
+  email!: string;
 
   @Column({ type: 'int', nullable: true })
   icon?: number;
 
   @Column()
-  password: string;
+  password!: string;
 
   @Column()
-  Nom: string;
+  Nom!: string;
   @Column({ nullable: true })
   phone?: string;
 
@@ -30,8 +30,8 @@ export class User {
   lastLogin?: Date;
 
   @Column({ type: 'int', default: 0 })
-  calculationsCount: number;
+  calculationsCount!: number;
 
   @OneToMany(() => Calculation, calculation => calculation.user)
-  calculations: Calculation[];
+  calculations!: Calculation[];
 }

@@ -4,20 +4,20 @@ import { User } from '../user/user.entity';
 @Entity()
 export class Calculation {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column()
-  expression: string;
+  expression!: string;
 
   @Column()
-  operator: string;
+  operator!: string;
 
   @Column()
-  result: string;
+  result!: string;
 
   @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @ManyToOne(() => User, user => user.calculations, { onDelete: 'CASCADE' })
-  user: User;
+  user!: User;
 }
