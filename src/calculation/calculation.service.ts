@@ -67,4 +67,8 @@ export class CalculationService {
         throw new Error('Opérateur non supporté');
     }
   }
+
+  async findAll(): Promise<Calculation[]> {
+    return this.calculationRepository.find();
+  }
 }
