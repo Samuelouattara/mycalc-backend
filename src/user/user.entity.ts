@@ -9,8 +9,8 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column({ nullable: true })
-  icon?: string;
+  @Column({ type: 'int', nullable: true })
+  icon?: number;
 
   @Column()
   password: string;

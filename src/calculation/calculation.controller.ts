@@ -26,8 +26,8 @@ export class CalculationController {
       } else {
         expression = `${expression1} ${operator} ${expression2}`;
       }
-      await this.calculationService.create(user, expression, result.toString(), operator);
-      return { result };
+  await this.calculationService.create(user, expression, result.toString(), operator);
+  return { result, operator };
     } catch (error) {
       throw new BadRequestException(error.message || 'Erreur de calcul');
     }
@@ -43,8 +43,16 @@ export class CalculationController {
         if (!user) throw new BadRequestException('Utilisateur non trouvé');
       }
       const result = this.calculationService.computeExpression(expression);
-      await this.calculationService.create(user, expression, result.toString(), 'chain');
-      return { result };
+      // Détection du nombre d'opérateurs
+      let operator = 'chain';
+      const trigMatches = expression.match(/\b(sin|cos|tan)\b/g) || [];
+      const arithMatches = expression.match(/[+\-*/]/g) || [];
+      const totalOps = trigMatches.length + arithMatches.length;
+      if (totalOps === 1) {
+        operator = trigMatches[0] ? trigMatches[0] : (arithMatches[0] ? arithMatches[0] : '');
+      }
+      await this.calculationService.create(user, expression, result.toString(), operator);
+      return { result, operator };
     } catch (error) {
       throw new BadRequestException(error.message || 'Erreur de calcul en chaîne');
     }

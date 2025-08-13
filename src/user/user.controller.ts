@@ -6,7 +6,7 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post('register')
-  async register(@Body() body: { email: string; password: string; Nom: string; icon?: string }) {
+  async register(@Body() body: { email: string; password: string; Nom: string; icon?: number }) {
     const existing = await this.userService.findByEmail(body.email);
     if (existing) throw new BadRequestException('Email déjà utilisé');
     return this.userService.create(body.email, body.password, body.Nom, body.icon);
