@@ -1,5 +1,3 @@
-  // ...existing code...
-
 import { Controller, Post, Body, BadRequestException, Get, Delete, Param, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { UserService } from './user.service';
@@ -122,20 +120,22 @@ export class UserController {
     return sorted.slice(0, 3);
   }
 
-  @Get('dashboard/types/calculs')
-  @ApiOperation({ summary: 'Obtenir le nombre total de calculs et le nombre par type d’opération' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Stats globales des calculs',
-  })
-  async getCalculTypesStats() {
-    const allCalculs = await this.calculationService.findAll();
-    const total = allCalculs.length;
-    const typesCount: Record<string, number> = {};
-    for (const calc of allCalculs) {
-      const op = calc.operator || 'inconnu';
-      typesCount[op] = (typesCount[op] || 0) + 1;
+    @Get('dashboard/types/calculs')
+    @ApiOperation({ summary: 'Obtenir le nombre total de calculs et le nombre par type d’opération' })
+    @ApiResponse({ 
+      status: 200, 
+      description: 'Stats globales des calculs',
+    })
+    async getCalculTypesStats() {
+      const allCalculs = await this.calculationService.findAll();
+      const total = allCalculs.length;
+      const typesCount: Record<string, number> = {};
+      for (const calc of allCalculs) {
+        const op = calc.operator || 'inconnu';
+        typesCount[op] = (typesCount[op] || 0) + 1;
+      }
+      return { total, types: typesCount };
     }
-    return { total, types: typesCount };
-  }
+
+
 }

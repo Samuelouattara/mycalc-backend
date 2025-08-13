@@ -24,6 +24,26 @@ export class CalculationService {
     const savedCalculation = await this.calculationRepository.save(calculation);
     if (user) {
       user.calculationsCount = (user.calculationsCount || 0) + 1;
+      // Mettre à jour le champ opetype (opérateur le plus utilisé)
+      const history = await this.calculationRepository.find({ where: { user: { id: user.id } } });
+      const opCount: Record<string, number> = {};
+      for (const calc of history) {
+        const op = calc.operator;
+        if (op && op !== '' && op !== 'inconnu') {
+          opCount[op] = (opCount[op] || 0) + 1;
+        }
+      }
+      let favoriteOp = undefined;
+      let max = 0;
+      for (const [op, count] of Object.entries(opCount)) {
+        if (count > max) {
+          max = count;
+          favoriteOp = op;
+        }
+      }
+      user.opetype = favoriteOp;
+  // Mettre à jour le champ lastcalc avec l'expression et le résultat du dernier calcul
+  user.lastcalc = `${expression} = ${result}`;
       await this.userRepository.save(user);
     }
     return savedCalculation;
