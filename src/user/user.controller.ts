@@ -1,4 +1,4 @@
-import { Controller, Post, Body, BadRequestException, Get, Delete, Param, NotFoundException } from '@nestjs/common';
+import { Controller, Post, Body, BadRequestException, Get, Delete, Param, NotFoundException, Patch } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { UserService } from './user.service';
 import { CalculationService } from '../calculation/calculation.service';
@@ -13,6 +13,29 @@ import {
 @ApiTags('users')
 @Controller('users')
 export class UserController {
+  @Delete('delete/:id')
+  @ApiOperation({ summary: 'Supprimer le compte utilisateur (mot de passe requis)' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Compte supprimé' })
+  @ApiResponse({ status: 400, description: 'Mot de passe incorrect' })
+  @ApiResponse({ status: 404, description: 'Utilisateur non trouvé' })
+  async deleteUser(@Param('id') id: number, @Body() body: { password: string }) {
+    const user = await this.userService.findById(id);
+    if (!user) throw new NotFoundException('Utilisateur non trouvé');
+    if (user.password !== body.password) throw new BadRequestException('Mot de passe incorrect');
+    await this.userService.deleteById(id);
+    return { message: 'Compte supprimé' };
+  }
+  @Patch('update/:id')
+  @ApiOperation({ summary: 'Modifier email et/ou mot de passe du compte utilisateur' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Utilisateur mis à jour', type: UserDto })
+  @ApiResponse({ status: 404, description: 'Utilisateur non trouvé' })
+    async updateUser(@Param('id') id: number, @Body() body: { email?: string; password?: string; Nom?: string }) {
+  const updated = await this.userService.updateUser(id, body.email, body.password, body.Nom);
+    if (!updated) throw new NotFoundException('Utilisateur non trouvé');
+    return updated;
+  }
   constructor(
     private readonly userService: UserService,
     private readonly calculationService: CalculationService
